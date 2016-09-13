@@ -217,6 +217,15 @@ function build_xc32_sh()
         cd $WORKING_DIR
     }
 
+function copy_device_files()
+{
+    cp -R ../pic32-part-support/device-info-files/device_files pic32-tools/bin/device_files/
+    cp ../pic32-part-support/device-info-files/xc32_device.info pic32-tools/bin/
+    cp ../pic32-part-support/device-info-files/deviceSupport.xml pic32-tools/bin/
+    cp -R ../pic32-part-support/device-info-files/device_files pic32-tools/pic32mx/device_files/
+    cp ../pic32-part-support/device-info-files/xc32_device.info pic32-tools/pic32mx/
+}
+
 ### Main script body
 
 
@@ -236,9 +245,9 @@ cd $WORKING_DIR
 
 # Check out the source code
 
-GIT_ROOT=https://api.github.com/repos/mariusgeanta
-GIT_PIC32_NEWLIB_REPO=https://api.github.com/repos/jasonkajita/pic32-newlib/tarball/master
-GIT_CHIPKIT_CXX_REPO=$GIT_ROOT/chipKIT-cxx/tarball/dev_src48x
+GIT_ROOT=https://api.github.com/repos/chipKIT32
+GIT_PIC32_NEWLIB_REPO=$GIT_ROOT/pic32-newlib/tarball/master
+GIT_CHIPKIT_CXX_REPO=$GIT_ROOT/chipKIT-cxx/tarball/master
 GIT_PIC32_PART_SUPPORT_REPO=$GIT_ROOT/pic32-part-support/tarball/master
 GIT_PIC32_SH_REPO_ROOT=$GIT_ROOT/pic32-sh
 GIT_PIC32_FDLIBM_REPO_ROOT=$GIT_ROOT/pic32-fdlibm
@@ -271,19 +280,19 @@ then
     assert_success $? "Normalize pic32-part-support directory name"
 fi
 
-# if [ "$CHECKOUT" = "yes" ]
-# then
-#    echo "Downloading $GIT_CHIPKIT_CXX_REPO."
-#    echo `date` "Downloading compiler source from $GIT_CHIPKIT_CXX_REPO..." >> $LOGFILE
-#    if [ -e chipKIT-cxx ]
-#    then
-#        rm -rf chipKIT-cxx
-#    fi
-#    curl -L $GIT_CHIPKIT_CXX_REPO | tar zx
-#    assert_success $? "Downloading compiler source from $GIT_CHIPKIT_CXX_REPO"
-#    mv *-chipKIT-cxx-* chipKIT-cxx
-#    assert_success $? "Normalize chipKIT-cxx directory name"
-# fi
+if [ "$CHECKOUT" = "yes" ]
+then
+   echo "Downloading $GIT_CHIPKIT_CXX_REPO."
+   echo `date` "Downloading compiler source from $GIT_CHIPKIT_CXX_REPO..." >> $LOGFILE
+   if [ -e chipKIT-cxx ]
+   then
+       rm -rf chipKIT-cxx
+   fi
+   curl -L $GIT_CHIPKIT_CXX_REPO | tar zx
+   assert_success $? "Downloading compiler source from $GIT_CHIPKIT_CXX_REPO"
+   mv *-chipKIT-cxx-* chipKIT-cxx
+   assert_success $? "Normalize chipKIT-cxx directory name"
+fi
 
 if [ "$CHECKOUT" = "yes" ]
 then
@@ -385,10 +394,10 @@ echo "make DESTROOT=\"$WORKING_DIR/arm-linux-image/pic32-tools\" install-headers
 make DESTROOT="$WORKING_DIR/arm-linux-image/pic32-tools" install-headers
 assert_success $? "ERROR: Making headers into cross compiler's arm-linux-image install image directory"
 
-if [ "x$LINUX32IMAGE" != "x" ]; then
-    make DESTROOT="$WORKING_DIR/$LINUX32IMAGE" install-headers
-    assert_success $? "ERROR: Making headers into cross compiler's $LINUX32IMAGE install image directory"
-fi
+# if [ "x$LINUX32IMAGE" != "x" ]; then
+#     make DESTROOT="$WORKING_DIR/$LINUX32IMAGE" install-headers
+#     assert_success $? "ERROR: Making headers into cross compiler's $LINUX32IMAGE install image directory"
+# fi
 
 # Install fdlibm headers
 cd $WORKING_DIR/fdlibm/src/xc32
@@ -1594,6 +1603,24 @@ fi
 
 cd $WORKING_DIR
 
+# copy resource files
+cd win32-image
+copy_device_files
+
+cd ../$NATIVEIMAGE
+copy_device_files
+
+# cd ../export-image
+# copy_device_files
+
+cd ../arm-linux-image
+copy_device_files
+
+cd ../Linux32-image
+copy_device_files
+
+cd ..
+
 echo "Making zip files"
 #ZIP installation directory.
 
@@ -1607,38 +1634,57 @@ fi
 cd $WORKING_DIR
 
 REV=${BUILD##pic32-}
-#tar cjf $WORKING_DIR/zips/pic32-tools-$REV-win32-image.tar.bz2 win32-image
-#tar cjf $WORKING_DIR/zips/pic32-tools-$REV-$NATIVEIMAGE.tar.bz2 $NATIVEIMAGE
-#tar cjf $WORKING_DIR/zips/pic32-tools-$REV-export-image.tar.bz2 export-image
-#if [ "x$LINUX32IMAGE" != "x" ]; then
-#    tar cjf $WORKING_DIR/zips/pic32-tools-$REV-$LINUX32IMAGE.tar.bz2 #$LINUX32IMAGE
-#fi
 
 cd win32-image
-zip -9 -r $WORKING_DIR/zips/pic32-tools-$REV-win32-image.zip pic32-tools
-shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-win32-image.zip | cut -d ' ' -f 1 > $WORKING_DIR/zips/pic32-tools-$REV-win32-image.sha256
-# remove unwanted *-gdb.py files
-find . -type f -name *-gdb.py | xargs rm
+tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-win32-image.tar.gz pic32-tools
+# delete *.py  *-pic.o  *_pic.o files
+find . -type f -name *.py -delete
+find . -name *-gdb.py -delete
+find . -name *_pic.o -delete
+find . -name *-pic.o -delete
+
 cd ../$NATIVEIMAGE
 tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-$NATIVEIMAGE.tar.gz pic32-tools
-shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-$NATIVEIMAGE.tar.gz | cut -d ' ' -f 1 > $WORKING_DIR/zips/pic32-tools-$REV-$NATIVEIMAGE.sha256
-find . -type f -name *-gdb.py | xargs rm
+# delete *.py  files
+find . -type f -name *.py -delete
+find . -name *-gdb.py -delete
+find . -name *_pic.o -delete
+find . -name *-pic.o -delete
+
 cd ../export-image
 tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-export-image.tar.gz pic32-tools
-shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-export-image.tar.gz | cut -d ' ' -f 1 > $WORKING_DIR/zips/pic32-tools-$REV-export-image.sha256
-find . -type f -name *-gdb.py | xargs rm
+# delete *.py files
+find . -type f -name *.py -delete
+find . -name *-gdb.py -delete
+find . -name *_pic.o -delete
+find . -name *-pic.o -delete
+
 cd ../arm-linux-image
 tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-arm-linux-image.tar.gz pic32-tools
-shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-arm-linux-image.tar.gz | cut -d ' ' -f 1 > $WORKING_DIR/zips/pic32-tools-$REV-arm-linux-image.sha256
-find . -type f -name *-gdb.py | xargs rm
+# delete *.py files
+find . -type f -name *.py -delete
+find . -name *-gdb.py -delete
+find . -name *_pic.o -delete
+find . -name *-pic.o -delete
+
 cd ..
 if [ "x$LINUX32IMAGE" != "x" ]; then
     cd $LINUX32IMAGE
     tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-$LINUX32IMAGE.tar.gz pic32-tools
-    shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-$LINUX32IMAGE.tar.gz | cut -d ' ' -f 1 > $WORKING_DIR/zips/pic32-tools-$REV-$LINUX32IMAGE.sha256
-    find . -type f -name *-gdb.py | xargs rm
+    # delete *.py files
+    find . -type f -name *.py -delete
+    find . -name *-gdb.py -delete
+    find . -name *_pic.o -delete
+    find . -name *-pic.o -delete
     cd ..
 fi
+
+shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-win32-image.tar.gz > $WORKING_DIR/zips/pic32-tools-$REV-win32-image.sha256
+shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-$NATIVEIMAGE.tar.gz > $WORKING_DIR/zips/pic32-tools-$REV-$NATIVEIMAGE.sha256
+shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-export-image.tar.gz > $WORKING_DIR/zips/pic32-tools-$REV-export-image.sha256
+shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-arm-linux-image.tar.gz > $WORKING_DIR/zips/pic32-tools-$REV-arm-linux-image.sha256
+shasum -a 256 $WORKING_DIR/zips/pic32-tools-$REV-$LINUX32IMAGE.tar.gz > $WORKING_DIR/zips/pic32-tools-$REV-$LINUX32IMAGE.sha256
+
 
 unset GCC_FOR_TARGET
 unset CC_FOR_TARGET
