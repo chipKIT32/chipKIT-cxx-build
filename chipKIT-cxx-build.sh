@@ -30,9 +30,9 @@ echo "$BASH_SOURCE START BUILD..."
 # i586-mingw32msvc-gcc   (Ubuntu)
 # i386-mingw32-gcc       (Fedora)
 if [ "x$MINGW32_HOST_PREFIX" == "x" ]; then
- MINGW_GCC=`which i586-mingw32-gcc`
+ MINGW_GCC=`which i686-w64-mingw32-gcc`
  if [ "x$MINGW_GCC" != "x" ] ; then
-  MINGW32_HOST_PREFIX=i586-mingw32
+  MINGW32_HOST_PREFIX=i686-w64-mingw32
  else
   MINGW32_HOST_PREFIX=i586-mingw32msvc
  fi
@@ -74,8 +74,8 @@ CHECKOUT="yes"
 SKIPLIBS=""
 SKIPNATIVE=""
 SKIPLINUX32=""
-SKIPWIN32=""
-SKIPARMLINUX=""
+SKIPWIN32="yes"
+SKIPARMLINUX="yes"
 SKIPGRAPHITE="yes"
 SKIPMULTIPLENEWLIB="yes"
 SKIPPLIBIMAGE="yes"
@@ -364,8 +364,18 @@ else
     HOSTMACHINE=""
     BUILDMACHINE=""
     LIBHOST="--with-host-libstdcxx=-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm"
-fi
+ export CC_FOR_BUILD="/usr/bin/gcc -m32 -march=i386"
+ export CXX_FOR_BUILD="/usr/bin/g++ -m32 -march=i386"
+ export CPP_FOR_BUILD="/usr/bin/cpp -m32 -march=i386"
+ export CC="/usr/bin/gcc -m32 -march=i386"
+ export CPP="/usr/bin/cpp -m32 -march=i386"
+ export CPPCXX="/usr/bin/cpp -m32 -march=i386"
+ export CXX="/usr/bin/g++ -m32 -march=i386"
+ export LD="/usr/bin/g++ -m32 -march=i386"
+ export AR="/usr/bin/ar"
 
+
+fi
 cd pic32-part-support
 
 # Install headers into cross compiler's install image directory
@@ -466,7 +476,7 @@ if [ "x$SKIPNATIVE" == "x" ] ; then
     echo `date` " Making all in $WORKING_DIR/native-build/binutils and installing..." >> $LOGFILE
     make CFLAGS="-O2 -DCHIPKIT_PIC32 -DMCHP_VERSION=${MCHP_VERSION}" all -j4
     assert_success $? "ERROR: making/installing cross binutils build"
-    make install
+    make CFLAGS="-O2 -DCHIPKIT_PIC32 -DMCHP_VERSION=${MCHP_VERSION}" install
     assert_success $? "ERROR: making/installing cross binutils build"
 
     NM_FOR_TARGET="$WORKING_DIR/$NATIVEIMAGE/pic32-tools/bin/pic32-nm"
