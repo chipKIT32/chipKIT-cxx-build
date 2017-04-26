@@ -1670,46 +1670,46 @@ cd $WORKING_DIR
 REV=${BUILD##pic32-}
 
 cd win32-image
-tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-win32-image.tar.gz pic32-tools
 # delete *.py  *-pic.o  *_pic.o files
 find . -type f -name *.py -delete
 find . -name *-gdb.py -delete
 find . -name *_pic.o -delete
 find . -name *-pic.o -delete
+tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-win32-image.tar.gz pic32-tools
 
 cd ../$NATIVEIMAGE
-tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-$NATIVEIMAGE.tar.gz pic32-tools
 # delete *.py  files
 find . -type f -name *.py -delete
 find . -name *-gdb.py -delete
 find . -name *_pic.o -delete
 find . -name *-pic.o -delete
+tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-$NATIVEIMAGE.tar.gz pic32-tools
 
 cd ../export-image
-tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-export-image.tar.gz pic32-tools
 # delete *.py files
 find . -type f -name *.py -delete
 find . -name *-gdb.py -delete
 find . -name *_pic.o -delete
 find . -name *-pic.o -delete
+tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-export-image.tar.gz pic32-tools
 
 cd ../arm-linux-image
-tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-arm-linux-image.tar.gz pic32-tools
 # delete *.py files
 find . -type f -name *.py -delete
 find . -name *-gdb.py -delete
 find . -name *_pic.o -delete
 find . -name *-pic.o -delete
+tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-arm-linux-image.tar.gz pic32-tools
 
 cd ..
 if [ "x$LINUX32IMAGE" != "x" ]; then
     cd $LINUX32IMAGE
-    tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-$LINUX32IMAGE.tar.gz pic32-tools
-    # delete *.py files
+        # delete *.py files
     find . -type f -name *.py -delete
     find . -name *-gdb.py -delete
     find . -name *_pic.o -delete
     find . -name *-pic.o -delete
+    tar -czvf $WORKING_DIR/zips/pic32-tools-$REV-$LINUX32IMAGE.tar.gz pic32-tools
     cd ..
 fi
 
