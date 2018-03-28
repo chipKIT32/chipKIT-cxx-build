@@ -110,7 +110,7 @@ do
         BUILD=pic32-$TVAL-$DATE
         ;;
       N)
-        cdecho "No checkout"
+        echo "No checkout"
         CHECKOUT="no"
         ;;
       M)
@@ -220,15 +220,16 @@ function build_xc32_sh()
         # COMMAND="make clean"
         make clean
 
-        make xc32 $2
+        make xc32 MACOS_DEVELOPERDIR="${DEVELOPERDIR}" $2
         # COMMAND="make xc32 $2"
+        assert_success $? "Error building the XC32 shell"
 
         #install
         #No need to add the /bin for call below
         export XC32_INSTALL="$1/pic32-tools"
         # COMMAND="make chipkit-install $2"
         make chipkit-install $2
-
+        assert_success $? "Error installing the XC32 shell"
         unset XC32_INSTALL
 
         cd $WORKING_DIR
@@ -375,6 +376,9 @@ then
         export CXX="$DEVELOPERDIR/usr/bin/g++-4.2 $COMPATIBILITY_FLAGS"
         export LD="$DEVELOPERDIR/usr/bin/gcc-4.2 $COMPATIBILITY_FLAGS"
         export AR="$DEVELOPERDIR/usr/bin/ar"
+        # It's unclear what versions of MacOS need this, but probably
+        # anything after 2011.
+        export LDFLAGS="-Wl,-search_paths_first"
     fi  # SKIPNATIVE
     LIBHOST=""
 else
@@ -723,6 +727,36 @@ if [ "x$SKIPNATIVE" == "x" ] ; then
     make install
     assert_success $? "ERROR: making/installing cross build install"
 
+    cd ..
+    if [ -e gdb ]
+    then
+        rm -rf gdb
+    fi
+    mkdir gdb
+    assert_success $? "ERROR: creating directory $WORKING_DIR/native-build/gdb"
+
+    cd gdb
+    echo `date` " Configuring gdb in $WORKING_DIR/native-build..." >> $LOGFILE
+    ../../chipKIT-cxx/src48x/gdb/configure \
+        --prefix=$WORKING_DIR/$NATIVEIMAGE/pic32-tools \
+        --bindir="$WORKING_DIR/$NATIVEIMAGE/pic32-tools/bin/bin" \
+        "$HOSTMACHINE" \
+        --target=pic32mx \
+        --program-prefix=pic32- \
+        --disable-binutils \
+        --disable-gas \
+        --disable-ld \
+        --disable-gprof \
+        --disable-sim \
+        --disable-tui \
+        --disable-gdbtk
+    assert_success $? "ERROR: Configure gdb for native build"
+    echo `date` " Building gdb in $WORKING_DIR/native-build..." >> $LOGFILE
+    make
+    assert_success $? "ERROR: making gdb for native build"
+    make install
+    assert_success $? "ERROR: installing gdb for native build"
+
     status_update "Cross build complete"
 
     cd ../..
@@ -1039,6 +1073,36 @@ if [ "x$SKIPLINUX32" == "x" ] ; then
         make CFLAGS="-O2 -DCHIPKIT_PIC32" CXXFLAGS="-O2 -DCHIPKIT_PIC32" install
         assert_success $? "ERROR: installing linux Canadian-cross compiler build"
 
+        cd ..
+        if [ -e gdb ]
+        then
+            rm -rf gdb
+        fi
+        mkdir gdb
+        assert_success $? "ERROR: creating directory $WORKING_DIR/linux32-build/gdb"
+
+        cd gdb
+        echo `date` " Configuring gdb in $WORKING_DIR/linux32-build..." >> $LOGFILE
+        ../../chipKIT-cxx/src48x/gdb/configure \
+            --prefix=$WORKING_DIR/$NATIVEIMAGE/pic32-tools \
+            --bindir="$WORKING_DIR/$NATIVEIMAGE/pic32-tools/bin/bin" \
+            --host="$LINUX32_HOST_PREFIX" \
+            --target=pic32mx \
+            --program-prefix=pic32- \
+            --disable-binutils \
+            --disable-gas \
+            --disable-ld \
+            --disable-gprof \
+            --disable-sim \
+            --disable-tui \
+            --disable-gdbtk
+        assert_success $? "ERROR: Configure gdb for linux32 build"
+        echo `date` " Building gdb in $WORKING_DIR/linux32-build..." >> $LOGFILE
+        make
+        assert_success $? "ERROR: making gdb for linux32 build"
+        make install
+        assert_success $? "ERROR: installing gdb for linux32 build"
+
         cd ../..
         status_update "Make linux32 Canadian cross build complete"
 
@@ -1294,6 +1358,36 @@ GCC_FOR_TARGET=$WORKING_DIR/$NATIVEIMAGE/pic32-tools/bin/pic32-gcc CC_FOR_TARGET
 assert_success $? "ERROR: making win32 Canadian-cross compiler build"
 make CFLAGS="-O2 -DCHIPKIT_PIC32 -D_WIN32_WINNT=0x0501 -DWINVER=0x501" CXXFLAGS="-O2 -DCHIPKIT_PIC32 -D_WIN32_WINNT=0x0501 -DWINVER=0x501" install
 assert_success $? "ERROR: installing win32 Canadian-cross compiler build"
+
+cd ..
+if [ -e gdb ]
+then
+    rm -rf gdb
+fi
+mkdir gdb
+assert_success $? "ERROR: creating directory $WORKING_DIR/win32-build/gdb"
+
+cd gdb
+echo `date` " Configuring gdb in $WORKING_DIR/win32-build..." >> $LOGFILE
+../../chipKIT-cxx/src48x/gdb/configure \
+    --prefix=$WORKING_DIR/win32-image/pic32-tools \
+    --bindir="$WORKING_DIR/win32-image/pic32-tools/bin/bin" \
+    --target=pic32mx \
+    --host=$MINGW32_HOST_PREFIX \
+    --program-prefix=pic32- \
+    --disable-binutils \
+    --disable-gas \
+    --disable-ld \
+    --disable-gprof \
+    --disable-sim \
+    --disable-tui \
+    --disable-gdbtk
+assert_success $? "ERROR: Configure gdb for native build"
+echo `date` " Building gdb in $WORKING_DIR/win32-build..." >> $LOGFILE
+make
+assert_success $? "ERROR: making gdb for win32 build"
+make install
+assert_success $? "ERROR: installing gdb for win32 build"
 
 cd ../..
 status_update "Make win32 Canadian cross build complete"
