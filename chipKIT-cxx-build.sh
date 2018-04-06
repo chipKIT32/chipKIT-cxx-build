@@ -96,8 +96,21 @@ GCC_FOR_TARGET="$WORKING_DIR/$NATIVEIMAGE/pic32-tools/bin/pic32-gcc"
 CC_FOR_TARGET="$WORKING_DIR/$NATIVEIMAGE/pic32-tools/bin/pic32-gcc"
 CFLAGS="-Os -DCHIPKIT_PIC32"
 
+show_usage()
+    {
+        # Shows the usage screen
+        echo "USAGE:  $0 [-t <tag> | -?]"
+        echo "  -b <tag>      Specify the branch for which you would like to build"
+        echo "  -t <tag>      Specify the tag for which you would like to build"
+        echo "  -N            No svn checkout build only"
+        echo "  -M            OS X build only"
+        echo "  -Q            Show svn checkout (no quiet)"
+        echo "  -? | -h       Show this usage message"
+        exit 1
+    }
+
 # Process the arguments
-while getopts b:FMNt:Q opt
+while getopts b:FMNt:Q:h\? opt
 do
     case "$opt" in
       t)
@@ -119,7 +132,7 @@ do
         SKIPWIN32="yes"
         SKIPARMLINUX="yes"
         ;;
-     \?) show_usage ;;
+      h | \?) show_usage ;;
     esac
 done
 
@@ -143,19 +156,6 @@ LOGFILE=`pwd`/$BUILD.log
 WORKING_DIR=`pwd`/$BUILD
 echo WORKING DIR $WORKING_DIR
 
-
-show_usage()
-    {
-        # Shows the usage screen
-        echo "USAGE:  $0 [-t <tag> | -?]"
-        echo "  -b <tag>      Specify the branch for which you would like to build"
-        echo "  -t <tag>      Specify the tag for which you would like to build"
-        echo "  -N            No svn checkout build only"
-        echo "  -M            OS X build only"
-        echo "  -Q            Show svn checkout (no quiet)"
-        echo "  -?            Show this usage message"
-        exit 1
-    }
 
 ####
 # assert_success()
